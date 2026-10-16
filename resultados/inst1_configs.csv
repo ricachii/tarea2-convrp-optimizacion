@@ -1,0 +1,7 @@
+config,estado,tiempo_s,obj,cota,gap_pct,nodos,instancia
+baseline,2,22.64,676.0,676.0,0.0,13066,inst1
+Cuts=0,9,60.01,676.0,612.0,9.467,42714,inst1
+Presolve=0,9,60.0,676.0,617.0,8.728,10261,inst1
+MIPFocus=1,9,60.0,676.0,643.0,4.882,60401,inst1
+MIPFocus=3,2,58.04,676.0,676.0,0.0,4870,inst1
+Heuristics=0,2,20.3,676.0,676.0,0.0,11985,inst1
