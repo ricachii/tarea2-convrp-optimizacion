@@ -1,0 +1,2 @@
+instancia,modelo,estado,tiempo_s,objetivo,cota,gap_pct,nodos,log
+inst1,relajacion,optimal,0.078,494.0,,,0,resultados_cplex\logs\inst1_relajacion.log

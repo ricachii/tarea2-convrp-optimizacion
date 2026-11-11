@@ -1,0 +1,2 @@
+instancia,modelo,estado,tiempo_s,objetivo,cota,gap_pct,nodos,log
+inst1,entero,integer optimal solution,239.938,676.0,676.0,0.0,96780,resultados_cplex\logs\inst1_entero.log
