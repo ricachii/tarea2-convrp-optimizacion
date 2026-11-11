@@ -14,7 +14,7 @@ import math
 import os
 import sys
 
-
+#HABIA INSTALADO COMMUNITY EDITION AL PRINCIPIO PORQUE EL TUTORIAL DE INSTALACION DE CANVAS NO ME SIRVIO Y LUEGO QUE CONSEGUI EDICION ESTUDIANTE PYTHON NO ME LO QUERIA PESCAR POR LO QUE TENGO ESTA PARTE.
 def cargar_runtime_cplex():
     """Carga el motor de Studio antes del DLL Community incluido con pip."""
     if os.name != "nt":
