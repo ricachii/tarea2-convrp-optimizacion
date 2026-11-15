@@ -1,0 +1,52 @@
+
+Gurobi 13.0.3 (win64) logging started Sun Nov 15 19:52:38 2026
+
+Set parameter LogFile to value "D:\Universidad\Optimizacion\area2-convrp-optimizacion\logs\inst1_gurobi_relax.log"
+Set parameter LogToConsole to value 0
+Set parameter OutputFlag to value 1
+Set parameter Threads to value 1
+Set parameter TimeLimit to value 600
+Gurobi Optimizer version 13.0.3 build v13.0.3rc0 (win64 - Windows 10.0 (19045.2))
+
+CPU model: AMD Ryzen 5 3550H with Radeon Vega Mobile Gfx, instruction set [SSE2|AVX|AVX2]
+Thread count: 4 physical cores, 8 logical processors, using up to 1 threads
+
+Non-default parameters:
+TimeLimit  600
+LogToConsole  0
+Threads  1
+
+Optimize a model with 1923 rows, 1734 columns and 8259 nonzeros (Min)
+Model fingerprint: 0x4db8ed2f
+Model has 1626 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+02]
+  Objective range  [2e+00, 5e+01]
+  Bounds range     [1e+00, 5e+02]
+  RHS range        [1e+00, 5e+02]
+
+Presolve removed 468 rows and 36 columns
+Presolve time: 0.04s
+Presolved: 1455 rows, 1698 columns, 7185 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    0.0000000e+00   1.018125e+02   0.000000e+00      0s
+     356    4.9400000e+02   0.000000e+00   0.000000e+00      0s
+
+Use crossover to convert LP symmetric solution to basic solution...
+Crossover log...
+
+       0 DPushes remaining with DInf 0.0000000e+00                 0s
+
+      51 PPushes remaining with PInf 0.0000000e+00                 0s
+       0 PPushes remaining with PInf 0.0000000e+00                 0s
+
+  Push phase complete: Pinf 0.0000000e+00, Dinf 7.7788880e+00      0s
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+     511    4.9400000e+02   0.000000e+00   7.778888e+00      0s
+Crossover time: 0.01 seconds (0.00 work units)
+     523    4.9400000e+02   0.000000e+00   0.000000e+00      0s
+
+Solved in 523 iterations and 0.11 seconds (0.01 work units)
+Optimal objective  4.940000000e+02
