@@ -1,0 +1,2 @@
+instancia,solver,modelo,hilos,estado,obj,cota,gap_pct,nodos,tiempo_s,n_bin,n_rest,gurobipy,log
+inst1,cplex,relax,1,optimal,494.0,,,,0.031,0,1923,,logs/inst1_cplex_relax.log
