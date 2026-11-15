@@ -22,16 +22,29 @@ CPLEX Studio 22.2.
 ## Experimentos
 
 Parámetros: `Threads=1`, `TimeLimit=600 s`; el resto en la configuración por
-defecto. Cerrar otros programas y correr un solver a la vez (el script ya lo hace).
+defecto. Cerrar otros programas antes de correr. El script ejecuta un solver a
+la vez, imprime al inicio el plan y al final un resumen.
 
 ```
-python convrp_tc3.py run instancias/inst1.json compare
-python convrp_tc3.py run instancias/inst2.json compare
-# opcional: hilos por defecto en ambos
-python convrp_tc3.py run instancias/inst1.json compare --threads 0
+python convrp_tc3.py final      # comparación principal: inst1 e inst2, ambos solvers, relax y mip (hilos 1, 600 s)
+python convrp_tc3.py extra      # opcional: lo mismo con hilos por defecto (--threads 0)
 ```
 
-Salidas: `resultados/*.csv`, `resultados/*_sol.json` y `logs/{inst}_{solver}_{relax|mip}.log`.
+Corridas sueltas:
+
+```
+python convrp_tc3.py run instancias/inst1.json relax --solver cplex
+python convrp_tc3.py run instancias/inst2.json mip --solver gurobi --timelimit 600
+python convrp_tc3.py run instancias/inst1.json compare [--threads 0]
+```
+
+Salidas (los hilos van siempre en el nombre: `h1` = 1 hilo, `hdef` = por defecto):
+- `logs/{inst}_{solver}_{relax|mip}_{h1|hdef}.log`
+- `resultados/{inst}_{exp}_{solver(es)}_{h1|hdef}.csv` (incluye timelimit, fecha y estado en texto)
+- `resultados/{inst}_{solver}_mip_{h1|hdef}_sol.json` (solución, para graficar)
+
+El script **aborta si algún log o CSV ya existe**, para no sobrescribir
+resultados. Con `--force` se sobrescribe (por ejemplo, `python convrp_tc3.py final --force`).
 
 ## Archivos
 

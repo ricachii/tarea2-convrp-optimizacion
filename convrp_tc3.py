@@ -8,6 +8,11 @@ Uso:
     python convrp_tc3.py run instancias/inst1.json relax --solver cplex
     python convrp_tc3.py run instancias/inst2.json mip --solver gurobi --timelimit 600
     python convrp_tc3.py run instancias/inst1.json compare --threads 0   # hilos por defecto
+    python convrp_tc3.py final     # comparacion principal completa (threads 1, 600 s)
+    python convrp_tc3.py extra     # opcional: hilos por defecto en ambos solvers
+
+Nombres: logs/{inst}_{solver}_{relax|mip}_{h1|hdef}.log y
+resultados/{inst}_{exp}_{solver(es)}_{h1|hdef}.csv. Aborta si ya existen (salvo --force).
 
 Experimentos: relax (relajacion continua), mip (modelo entero), compare (ambos,
 en ambos solvers, uno a la vez).
@@ -34,6 +39,7 @@ import json
 import math
 import os
 import sys
+from datetime import datetime
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 DIR_RES = os.path.join(AQUI, "resultados")
@@ -228,8 +234,15 @@ def _r(v, d=3):
     return round(v, d) if math.isfinite(v) else None
 
 
-def _sufijo(threads):
-    return "" if threads == 1 else "_hilosdef"
+ESTADOS_GUROBI = {1: "LOADED", 2: "OPTIMAL", 3: "INFEASIBLE", 4: "INF_OR_UNBD",
+                  5: "UNBOUNDED", 6: "CUTOFF", 7: "ITERATION_LIMIT", 8: "NODE_LIMIT",
+                  9: "TIME_LIMIT", 10: "SOLUTION_LIMIT", 11: "INTERRUPTED",
+                  12: "NUMERIC", 13: "SUBOPTIMAL"}
+
+
+def etiqueta_hilos(threads):
+    """h1 = 1 hilo; hdef = hilos por defecto del solver (--threads 0)."""
+    return "hdef" if threads == 0 else f"h{threads}"
 
 
 def resolver_gurobi(inst, pre, relajacion, timelimit, threads, ruta_log):
@@ -253,7 +266,7 @@ def resolver_gurobi(inst, pre, relajacion, timelimit, threads, ruta_log):
     tiene = m.SolCount > 0
     fila = dict(solver="gurobi", gurobipy=gp.gurobi.version(),
                 n_bin=n_bin, n_rest=n_rest,
-                estado=m.Status, tiempo_s=_r(m.Runtime),
+                estado=ESTADOS_GUROBI.get(m.Status, str(m.Status)), tiempo_s=_r(m.Runtime),
                 obj=_r(m.ObjVal) if tiene else None)
     sol = None
     if relajacion:
@@ -306,25 +319,58 @@ def _extraer(xv, zv):
 
 
 RESOLVEDORES = {"gurobi": resolver_gurobi, "cplex": resolver_cplex}
-CAMPOS = ["instancia", "solver", "modelo", "hilos", "estado", "obj", "cota", "gap_pct",
-          "nodos", "tiempo_s", "n_bin", "n_rest", "gurobipy", "log"]
+CAMPOS = ["instancia", "solver", "modelo", "hilos", "timelimit", "fecha", "estado", "obj",
+          "cota", "gap_pct", "nodos", "tiempo_s", "n_bin", "n_rest", "gurobipy", "log"]
+INSTANCIAS_FINALES = ["instancias/inst1.json", "instancias/inst2.json"]
+TIMELIMIT_FINAL = 600
+
+
+def ruta_log(nombre, solver, modelo, threads):
+    return os.path.join(DIR_LOG, f"{nombre}_{solver}_{modelo}_{etiqueta_hilos(threads)}.log")
+
+
+def ruta_sol(nombre, solver, threads):
+    return os.path.join(DIR_RES, f"{nombre}_{solver}_mip_{etiqueta_hilos(threads)}_sol.json")
+
+
+def ruta_csv(nombre, exp, solvers, threads):
+    return os.path.join(
+        DIR_RES, f"{nombre}_{exp}_{'-'.join(solvers)}_{etiqueta_hilos(threads)}.csv")
+
+
+def trabajo(archivo, exp, solver, threads):
+    """Un trabajo = una instancia con un conjunto de solvers y modelos."""
+    solvers = ["gurobi", "cplex"] if solver == "both" else [solver]
+    modelos = ["relax", "mip"] if exp == "compare" else [exp]
+    return dict(inst=cargar(archivo), exp=exp, solvers=solvers, modelos=modelos,
+                threads=threads)
+
+
+def salidas(tr):
+    """Archivos que escribira un trabajo (para detectar sobrescrituras)."""
+    n, th = tr["inst"]["nombre"], tr["threads"]
+    out = [ruta_csv(n, tr["exp"], tr["solvers"], th)]
+    for s in tr["solvers"]:
+        for mo in tr["modelos"]:
+            out.append(ruta_log(n, s, mo, th))
+        if "mip" in tr["modelos"]:
+            out.append(ruta_sol(n, s, th))
+    return out
 
 
 def experimento(inst, solver, modelo, timelimit, threads):
     """Una corrida: un solver, relax o mip. Escribe log y (si hay) solucion."""
     os.makedirs(DIR_LOG, exist_ok=True)
     os.makedirs(DIR_RES, exist_ok=True)
-    suf = _sufijo(threads)
-    nombre = f"{inst['nombre']}_{solver}_{modelo}{suf}"
-    ruta_log = os.path.join(DIR_LOG, nombre + ".log")
+    log = ruta_log(inst["nombre"], solver, modelo, threads)
     pre = preproceso(inst)
-    fila, sol = RESOLVEDORES[solver](inst, pre, modelo == "relax", timelimit,
-                                     threads, ruta_log)
+    fila, sol = RESOLVEDORES[solver](inst, pre, modelo == "relax", timelimit, threads, log)
     fila.update(instancia=inst["nombre"], modelo=modelo,
-                hilos=threads if threads else "defecto",
-                log=os.path.relpath(ruta_log, AQUI).replace("\\", "/"))
+                hilos=threads if threads else "defecto", timelimit=timelimit,
+                fecha=datetime.now().isoformat(timespec="seconds"),
+                log=os.path.relpath(log, AQUI).replace("\\", "/"))
     if sol is not None:
-        with open(os.path.join(DIR_RES, nombre + "_sol.json"), "w") as f:
+        with open(ruta_sol(inst["nombre"], solver, threads), "w") as f:
             json.dump(sol, f)
     print({k: fila[k] for k in CAMPOS if k in fila and k != "log"}, flush=True)
     return fila
@@ -338,28 +384,75 @@ def guardar_csv(filas, ruta):
     print(f"-> {ruta}")
 
 
+def ejecutar_plan(trabajos, timelimit, force):
+    """Imprime el plan, comprueba sobrescrituras y solvers, corre en secuencia
+    (un solver a la vez) e imprime un resumen."""
+    print("=== PLAN ===")
+    existentes = []
+    for tr in trabajos:
+        n, th = tr["inst"]["nombre"], etiqueta_hilos(tr["threads"])
+        for s in tr["solvers"]:
+            for mo in tr["modelos"]:
+                print(f"  {n} | {s} | {mo} | hilos={th} | timelimit={timelimit:g} s")
+        existentes += [o for o in salidas(tr) if os.path.exists(o)]
+    if existentes and not force:
+        lista = "\n  ".join(os.path.relpath(o, AQUI) for o in existentes)
+        raise RuntimeError("ya existen archivos de salida (use --force para sobrescribir):"
+                           f"\n  {lista}")
+    solvers = {s for tr in trabajos for s in tr["solvers"]}
+    if "gurobi" in solvers:
+        try:
+            import gurobipy  # noqa: F401  falla pronto si falta
+        except ImportError as exc:
+            raise RuntimeError(f"No se pudo importar gurobipy: {exc}") from exc
+    if "cplex" in solvers:
+        importar_cplex()
+    print("=== EJECUCION ===", flush=True)
+    resumen = []
+    for tr in trabajos:
+        filas = []
+        for s in tr["solvers"]:     # secuencial: nunca dos solvers a la vez
+            for mo in tr["modelos"]:
+                filas.append(experimento(tr["inst"], s, mo, timelimit, tr["threads"]))
+        guardar_csv(filas, ruta_csv(tr["inst"]["nombre"], tr["exp"], tr["solvers"],
+                                    tr["threads"]))
+        resumen += filas
+    print("=== RESUMEN ===")
+    print(f"{'inst':<6}{'solver':<8}{'modelo':<6}{'hilos':<8}{'estado':<24}{'obj':>8}"
+          f"{'gap%':>8}{'nodos':>10}{'t(s)':>10}")
+    for f in resumen:
+        print(f"{f['instancia']:<6}{f['solver']:<8}{f['modelo']:<6}{str(f['hilos']):<8}"
+              f"{str(f['estado']):<24}{str(f['obj']):>8}{str(f['gap_pct'] or '-'):>8}"
+              f"{str(f['nodos'] or '-'):>10}{str(f['tiempo_s']):>10}")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = p.add_subparsers(dest="cmd", required=True)
-    r = sub.add_parser("run")
+    r = sub.add_parser("run", help="una instancia, un experimento")
     r.add_argument("instancia")
     r.add_argument("exp", choices=["relax", "mip", "compare"])
     r.add_argument("--solver", choices=["gurobi", "cplex", "both"], default="both")
-    r.add_argument("--timelimit", type=float, default=600)
+    r.add_argument("--timelimit", type=float, default=TIMELIMIT_FINAL)
     r.add_argument("--threads", type=int, default=1, help="0 = hilos por defecto")
+    sub.add_parser("final", help="comparacion principal: inst1 e inst2, ambos solvers, "
+                                 "relax y mip, --threads 1, 600 s")
+    sub.add_parser("extra", help="corrida opcional con hilos por defecto (--threads 0)")
+    for sp in sub.choices.values():
+        sp.add_argument("--force", action="store_true",
+                        help="sobrescribir logs y CSV existentes")
     a = p.parse_args()
-    if a.timelimit <= 0:
-        p.error("--timelimit debe ser positivo")
 
-    inst = cargar(a.instancia)
-    solvers = ["gurobi", "cplex"] if a.solver == "both" else [a.solver]
-    modelos = ["relax", "mip"] if a.exp == "compare" else [a.exp]
-    filas = []
-    for s in solvers:           # secuencial: nunca dos solvers a la vez
-        for mo in modelos:
-            filas.append(experimento(inst, s, mo, a.timelimit, a.threads))
-    sufijo = f"{a.exp}_{'-'.join(solvers)}{_sufijo(a.threads)}"
-    guardar_csv(filas, os.path.join(DIR_RES, f"{inst['nombre']}_{sufijo}.csv"))
+    if a.cmd == "run":
+        if a.timelimit <= 0:
+            p.error("--timelimit debe ser positivo")
+        trabajos, tl = [trabajo(a.instancia, a.exp, a.solver, a.threads)], a.timelimit
+    else:
+        threads = 1 if a.cmd == "final" else 0
+        trabajos = [trabajo(os.path.join(AQUI, f), "compare", "both", threads)
+                    for f in INSTANCIAS_FINALES]
+        tl = TIMELIMIT_FINAL
+    ejecutar_plan(trabajos, tl, a.force)
 
 
 if __name__ == "__main__":

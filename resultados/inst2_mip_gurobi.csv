@@ -1,2 +1,0 @@
-instancia,solver,modelo,hilos,estado,obj,cota,gap_pct,nodos,tiempo_s,n_bin,n_rest,gurobipy,log
-inst2,gurobi,mip,1,2,812.0,812.0,0.0,21192,146.42,1629,1864,"(13, 0, 3)",logs/inst2_gurobi_mip.log
