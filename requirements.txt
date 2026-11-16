@@ -1,4 +1,4 @@
-gurobipy>=13.0
+gurobipy>=13.0,<14
 docplex>=2.25
 cplex>=22.1
 matplotlib>=3.7
