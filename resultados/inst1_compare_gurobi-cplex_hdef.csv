@@ -1,0 +1,5 @@
+instancia,solver,modelo,hilos,timelimit,fecha,estado,obj,cota,gap_pct,nodos,tiempo_s,n_bin,n_rest,gurobipy,log
+inst1,gurobi,relax,defecto,600,2026-11-15T22:41:14,OPTIMAL,494.0,,,,0.041,1680,1923,"(13, 0, 3)",logs/inst1_gurobi_relax_hdef.log
+inst1,gurobi,mip,defecto,600,2026-11-15T22:41:38,OPTIMAL,676.0,676.0,0.0,13413,23.856,1680,1923,"(13, 0, 3)",logs/inst1_gurobi_mip_hdef.log
+inst1,cplex,relax,defecto,600,2026-11-15T22:41:39,optimal,494.0,,,,0.016,0,1923,,logs/inst1_cplex_relax_hdef.log
+inst1,cplex,mip,defecto,600,2026-11-15T22:44:02,integer optimal solution,676.0,676.0,0.0,117164,142.438,1680,1923,,logs/inst1_cplex_mip_hdef.log
