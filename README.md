@@ -21,13 +21,14 @@ CPLEX Studio 22.2.
 
 ## Experimentos
 
-Parámetros: `Threads=1`, `TimeLimit=600 s`; el resto en la configuración por
-defecto. Cerrar otros programas antes de correr. El script ejecuta un solver a
-la vez, imprime al inicio el plan y al final un resumen.
+Presentada: hilos por defecto (`--threads 0`; 8 hilos en los logs). Control: 1 hilo
+(`--threads 1`, anexo). `TimeLimit=600 s` en ambos; el resto en la configuración por
+defecto de cada solver. Cerrar otros programas antes de correr. El script ejecuta un
+solver a la vez, imprime al inicio el plan y al final un resumen.
 
 ```
-python convrp_tc3.py final      # comparación principal: inst1 e inst2, ambos solvers, relax y mip (hilos 1, 600 s)
-python convrp_tc3.py extra      # opcional: lo mismo con hilos por defecto (--threads 0)
+python convrp_tc3.py final      # control con 1 hilo: inst1 e inst2, ambos solvers, relax y mip (--threads 1, 600 s)
+python convrp_tc3.py extra      # comparación presentada: lo mismo con hilos por defecto (--threads 0)
 ```
 
 Corridas sueltas:
