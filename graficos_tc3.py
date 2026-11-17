@@ -4,11 +4,13 @@ Lee resultados/inst*_compare_gurobi-cplex_{h1,hdef}.csv y genera:
   figuras/a_tiempo_mip_1hilo.png
   figuras/b_nodos_mip_1hilo.png
   figuras/c_tiempo_1hilo_vs_defecto.png
+  figuras/mapa_inst1.png, figuras/mapa_inst2.png (depósito y clientes de cada instancia)
   tabla_comparacion.md
 
 No ejecuta ningun solver. Uso:  python graficos_tc3.py
 """
 import glob
+import json
 import os
 
 import matplotlib
@@ -115,6 +117,67 @@ def fig_c(df):
     plt.close(fig)
 
 
+def mapa_instancia(ruta_json):
+    """Mapa de una instancia: deposito (D) y clientes con su ID.
+    Relleno = cliente con ventana horaria propia; hueco = sin ventana propia."""
+    with open(ruta_json, encoding="utf-8") as f:
+        inst = json.load(f)
+    nombre, n, Q = inst["nombre"], inst["n"], inst["Q"]
+    xy, con_ventana = inst["xy"], {int(k) for k in inst["ventana"]}
+    verde = "#009E73"
+    fig, ax = plt.subplots(figsize=(6, 5.4))
+    ax.scatter(*xy[0], marker="s", s=110, color=TINTA, zorder=3)
+    ax.annotate("D", xy[0], xytext=(7, 5), textcoords="offset points", fontsize=10,
+                fontweight="bold", color=TINTA)
+    colocadas = [xy[0]]          # etiquetas ya puestas (centros, en unidades de datos)
+    candidatos = [(1.9, 1.3), (-1.9, 1.3), (1.9, -1.7), (-1.9, -1.7),
+                  (0, 2.3), (0, -2.5), (-2.8, -0.2), (2.8, -0.2)]
+    for i in range(1, n + 1):
+        x, y = xy[i]
+        if i in con_ventana:
+            ax.scatter(x, y, s=55, color=verde, zorder=3)
+        else:
+            ax.scatter(x, y, s=55, facecolor="white", edgecolor=verde, linewidth=1.8, zorder=3)
+        # elige la primera posicion de la etiqueta que no pisa otros puntos ni etiquetas
+        elegido = candidatos[0]
+        for dx, dy in candidatos:
+            cx, cy = x + dx, y + dy
+            libre = all(abs(cx - px) > 2.6 or abs(cy - py) > 2.0
+                        for j, (px, py) in enumerate(xy) if j != i)
+            libre = libre and all(abs(cx - lx) > 3.0 or abs(cy - ly) > 2.2 for lx, ly in colocadas[1:])
+            if libre:
+                elegido = (dx, dy)
+                break
+        colocadas.append((x + elegido[0], y + elegido[1]))
+        ax.text(x + elegido[0], y + elegido[1], str(i), ha="center", va="center",
+                fontsize=9, color=TINTA)
+    ax.set_xlim(-4, 56)
+    ax.set_ylim(-4, 56)
+    ax.set_aspect("equal")
+    ax.set_xlabel("Coordenada x", color=TINTA)
+    ax.set_ylabel("Coordenada y", color=TINTA)
+    ax.set_axisbelow(True)
+    ax.grid(True, color=GRILLA, linewidth=0.8)
+    for lado in ("top", "right"):
+        ax.spines[lado].set_visible(False)
+    for lado in ("left", "bottom"):
+        ax.spines[lado].set_color("#999999")
+    ax.tick_params(colors=TINTA_SEC)
+    ax.set_title(f"{nombre} · {n} clientes · Q = {Q}", loc="left", color=TINTA, fontsize=12)
+    handles = [
+        plt.Line2D([], [], marker="s", linestyle="", color=TINTA, markersize=8, label="Depósito (D)"),
+        plt.Line2D([], [], marker="o", linestyle="", color=verde, markersize=7,
+                   label="Cliente con ventana horaria"),
+        plt.Line2D([], [], marker="o", linestyle="", markerfacecolor="white", markeredgecolor=verde,
+                   markeredgewidth=1.8, markersize=7, label="Cliente sin ventana horaria"),
+    ]
+    ax.legend(handles=handles, frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.14),
+              ncol=1, fontsize=9)
+    fig.tight_layout()
+    fig.savefig(os.path.join(DIR_FIG, f"mapa_{nombre}.png"), dpi=DPI)
+    plt.close(fig)
+
+
 def fmt_num(v, dec=2):
     return "—" if pd.isna(v) else f"{v:,.{dec}f}"
 
@@ -158,6 +221,8 @@ def main():
     barras_por_solver(df, "nodos", "Nodos explorados", "Nodos explorados con 1 hilo",
                       "b_nodos_mip_1hilo.png", lambda v: f"{int(v):,}")
     fig_c(df)
+    for ruta in sorted(glob.glob(os.path.join(RAIZ, "instancias", "inst*.json"))):
+        mapa_instancia(ruta)
     tabla(df)
     print("Figuras en", DIR_FIG, "y tabla_comparacion.md generados")
 
