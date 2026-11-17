@@ -55,5 +55,5 @@ resultados. Con `--force` se sobrescribe (por ejemplo, `python convrp_tc3.py fin
 | `verificar_entorno.py` | Chequeo de Python, licencias y límites de tamaño |
 | `convrp.py` | Código de la Tarea 2 (referencia, sin cambios) |
 | `instancias/` | inst1.json, inst2.json |
-| `docs/` | Retroalimentación TC2 y notas del equipo (no van al .zip) |
-| `previo/` | Corridas previas de CPLEX con 8 hilos (no son resultados finales) |
+| `docs/` | Solo en el repositorio, no va en el .zip: retroalimentación TC2 y notas del equipo |
+| `previo/` | Solo en el repositorio, no va en el .zip: corridas previas de CPLEX con 8 hilos (no son resultados finales) |
